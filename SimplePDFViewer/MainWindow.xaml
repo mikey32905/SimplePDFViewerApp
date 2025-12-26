@@ -1,0 +1,85 @@
+﻿<Window x:Class="SimplePDFViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SimplePDFViewer"
+        mc:Ignorable="d"
+        Title="Simple PDF Viewer" 
+        Height="600" Width="900"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+
+    <DockPanel>
+        <!--ToolBar-->
+        <ToolBar DockPanel.Dock="Top" Height="40">
+            <Button x:Name="buttonOpen"  Padding="10,5"
+                    Click="buttonOpen_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📁" FontSize="16" Margin="0,0,5,0"/>
+                    <TextBlock Text="Open PDF" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <Button x:Name="buttonPrevious"  Padding="10,5" 
+                    IsEnabled="{Binding IsPreviousButtonEnabled}"
+                    Click="buttonPrevious_Click">
+                <TextBlock Text=" ► Previous"/>
+            </Button>
+
+            <TextBlock VerticalAlignment="Center" Margin="10,0">
+                <Run Text="Page "/>
+                <Run Name="txtCurrentPage" 
+                     Text="{Binding CurrentPage}"/>
+                <Run Text=" of "/>
+                <Run Name="txtTotalPages"
+                     Text="{Binding TotalPages}"/>
+            </TextBlock>
+
+            <Button x:Name="buttonNext" Padding="10,5" 
+                    IsEnabled="{Binding IsNextButtonEnabled}"
+                    Click="buttonNext_Click">
+                <TextBlock Text="Next ◄"/>
+            </Button>
+
+            <Button x:Name="buttonZoomIn"  Padding="10,5" 
+                    IsEnabled="{Binding IsZoomInEnabled}"
+                    Click="buttonZoomIn_Click">
+                <TextBlock Text="🔍+ Zoom In"/>
+            </Button>
+
+            <Button x:Name="buttonZoomOut"  Padding="10,5" 
+                    IsEnabled="{Binding IsZoomOutEnabled}"
+                    Click="buttonZoomOut_Click">
+                <TextBlock Text="🔍- Zoom Out"/> 
+            </Button>
+
+            <Button x:Name="ButtonFitWidth"  Padding="10,5" 
+                    IsEnabled="{Binding IsFitWidthEnabled}"
+                    Click="ButtonFitWidth_Click">
+                <TextBlock Text="Fit Width"/>
+            </Button>
+        </ToolBar>
+        
+        <!-- Status Bar -->
+        <StatusBar DockPanel.Dock="Bottom" Height="25">
+            <StatusBarItem>
+                <TextBlock Name="txtStatus" Text="{Binding PdfDocumentStatus}"/>
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- PDF Display Area -->
+        <Grid>
+            <Border BorderBrush="Gray" BorderThickness="1" Margin="5">
+                <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Auto" 
+                         VerticalScrollBarVisibility="Auto"
+                         Background="#F0F0F0">
+                    <Image Name="imgPdfPage" Stretch="None"
+                           Source="{Binding SelectedPdfDocumentImage}"/>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </DockPanel>
+
+
+</Window>
