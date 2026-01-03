@@ -1,0 +1,24 @@
+<UserControl x:Class="SimplePDFViewer.Controls.PageTurnControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d">
+    <Grid x:Name="LayoutRoot" ClipToBounds="True">
+        <!-- Back page (shown during animation) -->
+        <Image x:Name="imgBackPage" 
+               Source="{Binding BackPageImage, RelativeSource={RelativeSource AncestorType=UserControl}}"
+               Stretch="None"/>
+        
+        <!-- Front page (current page being turned) -->
+        <Grid x:Name="FrontPageGrid">
+            <Grid.Projection>
+                <PlaneProjection x:Name="planeProjection" RotationY="0"/>
+            </Grid.Projection>
+            
+            <Image x:Name="imgFrontPage" 
+                   Source="{Binding FrontPageImage, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                   Stretch="None"/>
+        </Grid>
+    </Grid>
+</UserControl>
