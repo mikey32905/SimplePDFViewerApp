@@ -141,6 +141,6 @@ You can customize the page turning effect by modifying:
 ## Technical Notes
 
 - **Why PlaneProjection?**: WPF's `PlaneProjection` provides simple 3D transformations without requiring complex 3D scenes
-- **Pre-rendering**: Pages are rendered before animation starts to ensure smooth playback
+- **Pre-rendering**: Pages are rendered before animation starts to ensure smooth performance
 - **Reset**: The projection is reset to 0° after each animation to prepare for the next turn
 - **Callbacks**: Action callbacks ensure proper sequencing of operations

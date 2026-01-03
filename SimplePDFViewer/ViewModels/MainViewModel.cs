@@ -207,26 +207,7 @@ namespace SimplePDFViewer.ViewModels
 
             try
             {
-                //calculate dpi based on zoom factor
-                int dpi = (int)(96 * ZoomFactor);
-
-                using (var image = _pdfDocument.Render(currentPageValue, dpi, dpi, false))
-                {
-                    BitmapImage bitmapImage = new BitmapImage();
-
-                    using (var memory = new MemoryStream())
-                    {
-                        image.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                        memory.Position = 0;
-                        bitmapImage.BeginInit();
-                        bitmapImage.StreamSource = memory;
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.EndInit();
-                        bitmapImage.Freeze();
-                    }
-
-                    SelectedPdfDocumentImage = bitmapImage;
-                }
+                SelectedPdfDocumentImage = RenderPage(currentPageValue);
 
                 CurrentPage = $"{(currentPageValue + 1)}";
                 IsPreviousButtonEnabled = currentPageValue > 0;

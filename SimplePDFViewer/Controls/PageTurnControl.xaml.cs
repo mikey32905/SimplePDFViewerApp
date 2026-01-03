@@ -47,23 +47,7 @@ namespace SimplePDFViewer.Controls
         /// </summary>
         public void TurnPageForward(Action? onCompleted = null)
         {
-            // Animate rotation from 0 to -180 degrees (flip right to left)
-            var animation = new DoubleAnimation
-            {
-                From = 0,
-                To = -180,
-                Duration = TimeSpan.FromMilliseconds(600),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
-            };
-
-            animation.Completed += (s, e) =>
-            {
-                // Reset for next animation
-                planeProjection.RotationY = 0;
-                onCompleted?.Invoke();
-            };
-
-            planeProjection.BeginAnimation(PlaneProjection.RotationYProperty, animation);
+            AnimatePageTurn(-180, onCompleted);
         }
 
         /// <summary>
@@ -71,11 +55,18 @@ namespace SimplePDFViewer.Controls
         /// </summary>
         public void TurnPageBackward(Action? onCompleted = null)
         {
-            // Animate rotation from 0 to 180 degrees (flip left to right)
+            AnimatePageTurn(180, onCompleted);
+        }
+
+        /// <summary>
+        /// Animates the page turn with the specified rotation angle
+        /// </summary>
+        private void AnimatePageTurn(double rotationAngle, Action? onCompleted = null)
+        {
             var animation = new DoubleAnimation
             {
                 From = 0,
-                To = 180,
+                To = rotationAngle,
                 Duration = TimeSpan.FromMilliseconds(600),
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
             };
