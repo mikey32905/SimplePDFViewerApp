@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SimplePDFViewer"
+        xmlns:controls="clr-namespace:SimplePDFViewer.Controls"
         mc:Ignorable="d"
         Title="Simple PDF Viewer" 
         Height="600" Width="900"
@@ -74,8 +75,9 @@
                 <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Auto" 
                          VerticalScrollBarVisibility="Auto"
                          Background="#F0F0F0">
-                    <Image Name="imgPdfPage" Stretch="None"
-                           Source="{Binding SelectedPdfDocumentImage}"/>
+                    <controls:PageTurnControl x:Name="pageTurnControl"
+                                             FrontPageImage="{Binding SelectedPdfDocumentImage}"
+                                             BackPageImage="{Binding NextPdfDocumentImage}"/>
                 </ScrollViewer>
             </Border>
         </Grid>

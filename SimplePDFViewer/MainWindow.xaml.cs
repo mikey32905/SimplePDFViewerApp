@@ -38,12 +38,24 @@ namespace SimplePDFViewer
 
         private void buttonPrevious_Click(object sender, RoutedEventArgs e)
         {
-            viewModel.MoveToPrevious();
+            viewModel.PreparePageTurnBackward(() =>
+            {
+                pageTurnControl.TurnPageBackward(() =>
+                {
+                    viewModel.CompletePageTurn();
+                });
+            });
         }
 
         private void buttonNext_Click(object sender, RoutedEventArgs e)
         {
-            viewModel.MoveToNext();
+            viewModel.PreparePageTurnForward(() =>
+            {
+                pageTurnControl.TurnPageForward(() =>
+                {
+                    viewModel.CompletePageTurn();
+                });
+            });
         }
 
         private void buttonZoomIn_Click(object sender, RoutedEventArgs e)

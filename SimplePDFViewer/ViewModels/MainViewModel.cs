@@ -13,10 +13,12 @@ namespace SimplePDFViewer.ViewModels
         private string _currentPage = "0";
         private double _zoomFactor = 1.0;
        private BitmapImage? _selectedPdfDocumentImage;
+       private BitmapImage? _nextPdfDocumentImage;
        private PdfDocument? _pdfDocument;
 
         int currentPageValue = 0;
         int totalPagesValue = 0;
+        int pendingPageValue = -1;
 
         private string _totalPages = "0";
        private string _pdfDocumentStatus = "Ready. Open a PDF file to begin.";
@@ -70,6 +72,16 @@ namespace SimplePDFViewer.ViewModels
             { 
                 _selectedPdfDocumentImage = value;
                 OnPropertyChanged(nameof(SelectedPdfDocumentImage));
+            }
+        }
+
+        public BitmapImage? NextPdfDocumentImage
+        {
+            get { return _nextPdfDocumentImage; }
+            set
+            {
+                _nextPdfDocumentImage = value;
+                OnPropertyChanged(nameof(NextPdfDocumentImage));
             }
         }
 
@@ -243,6 +255,107 @@ namespace SimplePDFViewer.ViewModels
             {
                 currentPageValue++;
                 DisplayCurrentPage();
+            }
+        }
+
+        /// <summary>
+        /// Prepares for a page turn forward animation
+        /// </summary>
+        public void PreparePageTurnForward(Action startAnimation)
+        {
+            if (_pdfDocument is null || currentPageValue >= totalPagesValue - 1)
+            {
+                return;
+            }
+
+            // Store the pending page
+            pendingPageValue = currentPageValue + 1;
+
+            // Render the next page as the "back" page
+            NextPdfDocumentImage = RenderPage(pendingPageValue);
+
+            // Start the animation
+            startAnimation?.Invoke();
+        }
+
+        /// <summary>
+        /// Prepares for a page turn backward animation
+        /// </summary>
+        public void PreparePageTurnBackward(Action startAnimation)
+        {
+            if (_pdfDocument is null || currentPageValue <= 0)
+            {
+                return;
+            }
+
+            // Store the pending page
+            pendingPageValue = currentPageValue - 1;
+
+            // Render the previous page as the "back" page
+            NextPdfDocumentImage = RenderPage(pendingPageValue);
+
+            // Start the animation
+            startAnimation?.Invoke();
+        }
+
+        /// <summary>
+        /// Completes the page turn by updating the current page
+        /// </summary>
+        public void CompletePageTurn()
+        {
+            if (pendingPageValue >= 0)
+            {
+                currentPageValue = pendingPageValue;
+                pendingPageValue = -1;
+
+                // Update the front page with the new current page
+                SelectedPdfDocumentImage = NextPdfDocumentImage;
+                NextPdfDocumentImage = null;
+
+                // Update UI elements
+                CurrentPage = $"{(currentPageValue + 1)}";
+                IsPreviousButtonEnabled = currentPageValue > 0;
+                IsNextButtonEnabled = currentPageValue < totalPagesValue - 1;
+            }
+        }
+
+        /// <summary>
+        /// Renders a specific page to a BitmapImage
+        /// </summary>
+        private BitmapImage? RenderPage(int pageIndex)
+        {
+            if (_pdfDocument is null || pageIndex < 0 || pageIndex >= totalPagesValue)
+            {
+                return null;
+            }
+
+            try
+            {
+                int dpi = (int)(96 * ZoomFactor);
+
+                using (var image = _pdfDocument.Render(pageIndex, dpi, dpi, false))
+                {
+                    BitmapImage bitmapImage = new BitmapImage();
+
+                    using (var memory = new MemoryStream())
+                    {
+                        image.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                        memory.Position = 0;
+                        bitmapImage.BeginInit();
+                        bitmapImage.StreamSource = memory;
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+                    }
+
+                    return bitmapImage;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error rendering page: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
             }
         }
 
