@@ -12,8 +12,11 @@ namespace SimplePDFViewer.ViewModels
 
         private string _currentPage = "0";
         private double _zoomFactor = 1.0;
-       private BitmapImage? _selectedPdfDocumentImage;
-       private PdfDocument? _pdfDocument;
+      // private BitmapImage? _selectedPdfDocumentImage;
+        private BitmapImage? _currentPageImage;
+        private BitmapImage? _previousPageImage;
+        private BitmapImage? _nextPageImage;
+        private PdfDocument? _pdfDocument;
 
         int currentPageValue = 0;
         int totalPagesValue = 0;
@@ -25,6 +28,19 @@ namespace SimplePDFViewer.ViewModels
         private bool _isZoomInEnabled = false;
         private bool _isZoomOutEnabled = false;
         private bool _isFitWidthEnabled = false;
+        private bool _isPDFLoaded = false;
+
+        public bool CanNavigatePrevious => IsPDFLoaded && currentPageValue > 0;
+        public bool CanNavigateNext => IsPDFLoaded && currentPageValue < totalPagesValue - 1;
+
+
+        #region Event Methods
+
+        public event EventHandler<bool> RequestPageTurn;
+        public event EventHandler<BitmapImage> CurrentPageRendered;
+        public event EventHandler PreviousAndNextPagesPreloaded;
+
+        #endregion Event Methods
 
         #endregion Members
 
@@ -41,6 +57,18 @@ namespace SimplePDFViewer.ViewModels
         #region Properties
 
         public double ZOOM_STEP { get; private set; } = 0.25;
+
+
+        public bool IsPDFLoaded
+        {
+            get { return _isPDFLoaded; }
+            set
+            { 
+                _isPDFLoaded = value;
+                OnPropertyChanged(nameof(IsPDFLoaded));
+            }
+        }
+
 
         public string CurrentPage
         {
@@ -63,15 +91,15 @@ namespace SimplePDFViewer.ViewModels
             }
         }
  
-        public BitmapImage? SelectedPdfDocumentImage
-        {
-            get { return _selectedPdfDocumentImage; }
-            set
-            { 
-                _selectedPdfDocumentImage = value;
-                OnPropertyChanged(nameof(SelectedPdfDocumentImage));
-            }
-        }
+        //public BitmapImage? SelectedPdfDocumentImage
+        //{
+        //    get { return _selectedPdfDocumentImage; }
+        //    set
+        //    { 
+        //        _selectedPdfDocumentImage = value;
+        //        OnPropertyChanged(nameof(SelectedPdfDocumentImage));
+        //    }
+        //}
 
 
         public string TotalPages
@@ -149,6 +177,37 @@ namespace SimplePDFViewer.ViewModels
             }
         }
 
+        public BitmapImage? CurrentPageImage
+        {
+            get { return _currentPageImage; }
+            set
+            {
+                _currentPageImage = value;
+                OnPropertyChanged(nameof(CurrentPageImage));
+            }
+        }
+
+        public BitmapImage? PreviousPageImage
+        {
+            get { return _previousPageImage; }
+            set
+            {
+                _previousPageImage = value;
+                OnPropertyChanged(nameof(PreviousPageImage));
+            }
+        }
+
+        public BitmapImage? NextPageImage
+        {
+            get { return _nextPageImage; }
+            set
+            {
+                _nextPageImage = value;
+                OnPropertyChanged(nameof(NextPageImage));
+            }
+        }
+
+
 
         #endregion Properties 
 
@@ -173,9 +232,12 @@ namespace SimplePDFViewer.ViewModels
                 IsZoomInEnabled = true;
                 IsZoomOutEnabled = true;
                 IsFitWidthEnabled = true;
+                IsPDFLoaded = true;
 
                 //Display first page
-                DisplayCurrentPage();
+                DisplayCurrentPage(0);
+                PreloadAdjacentPages(0);
+
 
             }
             catch (Exception ex)
@@ -186,7 +248,7 @@ namespace SimplePDFViewer.ViewModels
             }
         }
 
-        private void DisplayCurrentPage()
+        private void DisplayCurrentPage(int currentPageValue)
         {
             if (_pdfDocument is null)
             {
@@ -197,26 +259,11 @@ namespace SimplePDFViewer.ViewModels
             {
                 //calculate dpi based on zoom factor
                 int dpi = (int)(96 * ZoomFactor);
+                CurrentPageImage = RenderPage(currentPageValue, dpi);
 
-                using (var image = _pdfDocument.Render(currentPageValue, dpi, dpi, false))
-                {
-                    BitmapImage bitmapImage = new BitmapImage();
+                CurrentPageRendered?.Invoke(this, CurrentPageImage);//EventArgs.Empty
 
-                    using (var memory = new MemoryStream())
-                    {
-                        image.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
-                        memory.Position = 0;
-                        bitmapImage.BeginInit();
-                        bitmapImage.StreamSource = memory;
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.EndInit();
-                        bitmapImage.Freeze();
-                    }
-
-                    SelectedPdfDocumentImage = bitmapImage;
-                }
-
-                CurrentPage = $"{(currentPageValue + 1)}";
+                CurrentPage = $"{(currentPageValue + 1)}";//
                 IsPreviousButtonEnabled = currentPageValue > 0;
                 IsNextButtonEnabled = currentPageValue < totalPagesValue - 1;
             }
@@ -228,30 +275,89 @@ namespace SimplePDFViewer.ViewModels
 
         }
 
+        private BitmapImage RenderPage(int pageIndex, int dpi)
+        {
+            using (var image = _pdfDocument.Render(pageIndex, dpi, dpi, false))
+            {
+                BitmapImage bitmapImage = new BitmapImage();
+                using (var memory = new MemoryStream())
+                {
+                    image.Save(memory, System.Drawing.Imaging.ImageFormat.Png);
+                    memory.Position = 0;
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = memory;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+                }
+                return bitmapImage;
+            }
+        }
+
+
         public void MoveToPrevious()
         {
-            if (currentPageValue > 0)
+            if (CanNavigatePrevious)
             {
                 currentPageValue--;
-                DisplayCurrentPage();
+                DisplayCurrentPage(currentPageValue);
+                PreloadAdjacentPages(currentPageValue);
+                RequestPageTurn?.Invoke(this, false);
             }
         }
 
         public void MoveToNext()
         {
-            if (_pdfDocument is not null &&  currentPageValue < totalPagesValue - 1)
+            if (CanNavigateNext)
             {
                 currentPageValue++;
-                DisplayCurrentPage();
+                DisplayCurrentPage(currentPageValue);
+                PreloadAdjacentPages(currentPageValue);
+                RequestPageTurn?.Invoke(this, true);
+            }
+
+            //RequestPageTurn
+        }
+
+        private void PreloadAdjacentPages(int currentPage)
+        {
+            if (_pdfDocument == null) return;
+
+            try
+            {
+                int dpi = (int)(96 * ZoomFactor);
+              //  int currentPage = currentPageValue;//int.Parse(CurrentPage)
+                int totalPages = int.Parse(TotalPages);
+
+                // Preload next page
+                if (currentPage < totalPages - 1)
+                { 
+                    int nextPage = currentPage + 1;
+                    NextPageImage = RenderPage(nextPage, dpi);
+                }
+
+                // Preload previous page
+                if (currentPage > 1)
+                {
+                    int previousPage = currentPage - 1;
+                    PreviousPageImage = RenderPage(previousPage, dpi);
+                }
+
+                PreviousAndNextPagesPreloaded?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error preloading pages: {ex.Message}");
             }
         }
+
 
         public void PerformZoomIn()
         { 
             if (ZoomFactor > 0.25) // Min zoom 25%
             {
                 ZoomFactor -= ZOOM_STEP;
-                DisplayCurrentPage();
+                DisplayCurrentPage(currentPageValue);
                 PdfDocumentStatus = $"Zoom: {(ZoomFactor * 100):F0}%";
             }
         }
@@ -261,7 +367,7 @@ namespace SimplePDFViewer.ViewModels
             if (ZoomFactor < 3.0) //Max zoom is 300%
             {
                 ZoomFactor += ZOOM_STEP;
-                DisplayCurrentPage();
+                DisplayCurrentPage(currentPageValue);
                 PdfDocumentStatus = $"Zoom: {(ZoomFactor * 100):F0}%";
             }
         }
@@ -279,7 +385,7 @@ namespace SimplePDFViewer.ViewModels
 
                 double availableWidth = scrollViewerWidth - 20; // Subtract padding
                 ZoomFactor = availableWidth / image.Width;
-                 DisplayCurrentPage();
+                DisplayCurrentPage(currentPageValue);
                 PdfDocumentStatus = $"Fit to width: {(ZoomFactor * 100):F0}%";
             }
 

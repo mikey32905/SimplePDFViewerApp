@@ -3,12 +3,19 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converter="clr-namespace:SimplePDFViewer.converters"
+        xmlns:controls="clr-namespace:SimplePDFViewer.Views"
         xmlns:local="clr-namespace:SimplePDFViewer"
         mc:Ignorable="d"
         Title="Simple PDF Viewer" 
         Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded"
         Closing="Window_Closing">
+
+    <Window.Resources>
+        <converter:BoolToVisibilityConverter x:Key="BoolToVisible" />
+    </Window.Resources>
 
     <DockPanel>
         <!--ToolBar-->
@@ -68,15 +75,58 @@
             </StatusBarItem>
         </StatusBar>
 
-        <!-- PDF Display Area -->
+        <!-- Main Context Area with Page Turn control -->
         <Grid>
-            <Border BorderBrush="Gray" BorderThickness="1" Margin="5">
-                <ScrollViewer Name="scrollViewer" HorizontalScrollBarVisibility="Auto" 
-                         VerticalScrollBarVisibility="Auto"
-                         Background="#F0F0F0">
-                    <Image Name="imgPdfPage" Stretch="None"
-                           Source="{Binding SelectedPdfDocumentImage}"/>
-                </ScrollViewer>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- PDF Display with Border and Shadow Effect -->
+            <Border Grid.Row="0"
+                     BorderBrush="#D0D0D0" 
+                    BorderThickness="1" 
+                    Margin="10"
+                    Background="White"
+                    CornerRadius="4">
+                <Border.Effect>
+                    <DropShadowEffect Color="#888888" 
+                                    BlurRadius="10" 
+                                    ShadowDepth="2" 
+                                    Opacity="0.3"/>
+                </Border.Effect>
+
+                <Grid>
+
+                    <!-- Loading Indicator (shown when no PDF loaded) -->
+                    <StackPanel VerticalAlignment="Center" 
+                               HorizontalAlignment="Center"
+                               Visibility="{Binding IsPDFLoaded, Converter={StaticResource BoolToVisible}}">
+                        <TextBlock Text="📄" 
+                                 FontSize="72" 
+                                 HorizontalAlignment="Center"
+                                 Opacity="0.3"
+                                 Margin="0,0,0,20"/>
+                        <TextBlock Text="No PDF loaded" 
+                                 FontSize="18" 
+                                 Foreground="#999999"
+                                 HorizontalAlignment="Center"
+                                 Margin="0,0,0,10"/>
+                        <TextBlock Text="Click 'Open' or press Ctrl+O to open a PDF file" 
+                                 FontSize="14" 
+                                 Foreground="#AAAAAA"
+                                 HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <ScrollViewer Name="scrollViewer"
+                                HorizontalScrollBarVisibility="Auto" 
+                                VerticalScrollBarVisibility="Auto"
+                                Background="#F5F5F5"
+                                Padding="20">
+                        <controls:PageTurnControl x:Name="pageTurnControl" />       
+                    </ScrollViewer>
+                     
+                </Grid>
+
             </Border>
         </Grid>
     </DockPanel>
